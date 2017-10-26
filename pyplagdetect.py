@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-# % lsmagic
+
 # edit directories for existing and new reports, relative to script folder
 existing_dir = "./existing_reports"
 test_dir = "./to_be_tested"
@@ -12,14 +12,13 @@ min_copies = 3
 ## script requires following modules, which can be installed by typing "pip3 install YYY" in command line,
 ## YYY = os, numpy, hashlib, pdftotext
 
-###############################################
+
+
 ###############################################
 ####                                       ####
 ####      !!! DO NOT EDIT BELOW !!!        ####
 ####                                       ####
 ###############################################
-###############################################
-
 
 import os
 import numpy as np
@@ -78,7 +77,7 @@ for root, subdir, filename in os.walk(existing_dir):
             end_hash = np.size(hash_existing) - 1
             # store first and last hash line together with document name
             doc_backlink.append( [os.path.join(root, one_file), begin_hash, end_hash] )
-import_time = time.time() - start_time 
+import_time = time.time() - start_time
 print('  reference documents analyzed in %.2f seconds\n' % import_time)
 
 # scan through new pdf files, extract text, split it at each sentence
@@ -117,7 +116,7 @@ for root, subdir, filename in os.walk(test_dir):
                         hash_new.append(hash_object.hexdigest())
 
 
-            # find all hashes that exists in both old pdfs and the new document        
+            # find all hashes that exists in both old pdfs and the new document
             hash_matches = set(hash_existing).intersection(hash_new)
             # create empty list
             existing_hash_line = []
@@ -126,8 +125,8 @@ for root, subdir, filename in os.walk(test_dir):
                 existing_hash_line.append(hash_existing.index(match))
             # sort hashes in ascending order
             existing_hash_line = np.sort(existing_hash_line)
-            
-            
+
+
             # create text file with same name as new pdf document and open it
             save_name = os.path.join(os.path.splitext(one_file)[0] + "." + "txt")
             with open(os.path.join(root, save_name), "w") as f:
@@ -166,5 +165,5 @@ for root, subdir, filename in os.walk(test_dir):
                                 prev = l
                         f.write('\n')
                         header_write = True
-                        
+
             print('  %s finished' % one_file)
