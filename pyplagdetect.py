@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
 # edit directories for existing and new reports, relative to script folder
-existing_dir = "./existing_reports"
-test_dir = "./to_be_tested"
+existing_dir = "../existing_reports"
+test_dir = "../to_be_tested"
 
 ## change length of string sequence to be detected, 7 is a good value
 tuple_length = 7
@@ -27,15 +27,52 @@ import hashlib
 import time
 import pdftotext
 
+def generate_hashes(pdf_text, tuple_length, hash_list, string_list):
+    # combine single pages into one big string
+    whole_text = "\n\n".join(pdf_text)
+    # merge two words around a hyphen "-" together to handle hyphenation
+    whole_text = whole_text.replace('-\n','')
+    # replace newlines with spaces and then split text at points
+    text_by_sentences = whole_text.replace('\n',' ').split('.')
+    # iterate through each sentence
+    for sentence in text_by_sentences:
+        # split each sentence into its single words
+        sentence_split = re.findall('\w+',sentence)
+        # only evaluate if sentence is longer than "tuple_length" words
+        if len(sentence_split) >= tuple_length:
+            # go through each 7-word combination in each sentence (4 times for 10 words)
+            for k in range(0,len(sentence_split)-tuple_length+1):
+                # join seven words into one string, with spaces in between each word
+                seven_strings = " ".join(sentence_split[k:k+tuple_length])
+                # store string in separat list for later printing to output
+                string_list.append(seven_strings)
+                # hash each string with md5 for faster comparison
+                hash_object = hashlib.md5(seven_strings.encode())
+                # add each hash to one big list with all hashes of all existing documents
+                hash_list.append(hash_object.hexdigest())
+                # hash each six-word tuple of each seven-word tuple as well
+                seven_strings_split = seven_strings.split()
+                for m in range(0,tuple_length):
+                    six_strings =  seven_strings_split[0:m] + seven_strings_split[m+1:tuple_length]
+                    six_strings = " ".join(six_strings)
+                    string_list.append(six_strings)
+                    # hash each string with md5 for faster comparison
+                    hash_object = hashlib.md5(six_strings.encode())
+                    # add each hash to one big list with all hashes of all existing documents
+                    hash_list.append(hash_object.hexdigest())
+    return [hash_list, string_list]
+
+
+
+# scan through existing pdf files, extract text, split it at each sentence
+# take each sentence equal or longer than 7 words and generate a hash
+# save hashes in hash_existing
 
 hash_existing = []
 string_existing = []
 doc_backlink = []
 ref_doc_count = 0
 
-# scan through existing pdf files, extract text, split it at each sentence
-# take each sentence equal or longer than 7 words and generate a hash
-# save hashes in hash_existing
 start_time = time.time()
 hash_time = 0
 for root, subdir, filename in os.walk(existing_dir):
@@ -52,39 +89,8 @@ for root, subdir, filename in os.walk(existing_dir):
             ref_doc_count += 1
             # store current length of hash_existing for later backtracking of document
             begin_hash = len(hash_existing)
-            # combine single pages into one big string
-            whole_text = "\n\n".join(pdf_text)
-            # merge two words around a hyphen "-" together to handle hyphenation
-            whole_text = whole_text.replace('-\n','')
-            # replace newlines with spaces and then split text at points
-            text_by_sentences = whole_text.replace('\n',' ').split('.')
-            # iterate through each sentence
-            for sentence in text_by_sentences:
-                # split each sentence into its single words
-                sentence_split = re.findall('\w+',sentence)
-                # only evaluate if sentence is longer than "tuple_length" words
-                if len(sentence_split) >= tuple_length:
-                    # go through each 7-word combination in each sentence (4 times for 10 words)
-                    for k in range(0,len(sentence_split)-tuple_length+1):
-                        # join seven words into one string, with spaces in between each word
-                        seven_strings = " ".join(sentence_split[k:k+tuple_length])
-                        # store string in separat list for later printing to output
-                        string_existing.append(seven_strings)
-                        # hash each string with md5 for faster comparison
-                        hash_object = hashlib.md5(seven_strings.encode())
-                        # add each hash to one big list with all hashes of all existing documents
-                        hash_existing.append(hash_object.hexdigest())
-                        # hash each six-word tuple of each seven-word tuple as well
-                        seven_strings_split = seven_strings.split()
-                        for m in range(0,tuple_length):
-                            six_strings =  seven_strings_split[0:m] + seven_strings_split[m+1:tuple_length]
-                            six_strings = " ".join(six_strings)
-                            string_existing.append(six_strings)
-                            # hash each string with md5 for faster comparison
-                            hash_object = hashlib.md5(six_strings.encode())
-                            # add each hash to one big list with all hashes of all existing documents
-                            hash_existing.append(hash_object.hexdigest())
-
+            # generate hashes and string list from text
+            [hash_existing, string_existing] = generate_hashes(pdf_text, tuple_length, hash_existing, string_existing)
             # store last hast for later backtracking of document
             end_hash = np.size(hash_existing) - 1
             # store first and last hash line together with document name
@@ -106,39 +112,8 @@ for root, subdir, filename in os.walk(test_dir):
             # open file and store all text in "pdf_text"
             with open(os.path.join(root, one_file), "rb") as f:
                 pdf_text = pdftotext.PDF(f)
-            # combine single pages into one big string
-            whole_text = "\n\n".join(pdf_text)
-            # merge two words around a hyphen "-" together to handle hyphenation
-            whole_text = whole_text.replace('-\n','')
-            # replace newlines with spaces and then split text at points
-            text_by_sentences = whole_text.replace('\n',' ').split('.')
-            # iterate through each sentence
-            for sentence in text_by_sentences:
-                # split each sentence into its single words
-                sentence_split = re.findall('\w+',sentence)
-                # only evaluate if sentence is longer than "tuple_length" words
-                if len(sentence_split) >= tuple_length:
-                    # go through each 7-word combination in each sentence (4 times for 10 words)
-                    for k in range(0,len(sentence_split)-tuple_length+1):
-                        # join seven words into one string, with spaces in between each word
-                        seven_strings = " ".join(sentence_split[k:k+tuple_length])
-                        # store string in separat list for later printing to output
-                        string_new.append(seven_strings)
-                        # hash each string with md5 for faster comparison
-                        hash_object = hashlib.md5(seven_strings.encode())
-                        # add each hash to one list with all hashes for each document
-                        hash_new.append(hash_object.hexdigest())
-                        # hash each six-word tuple of each seven-word tuple as well
-                        seven_strings_split = seven_strings.split()
-                        for m in range(0,tuple_length):
-                            six_strings =  seven_strings_split[0:m] + seven_strings_split[m+1:tuple_length]
-                            six_strings = " ".join(six_strings)
-                            string_new.append(six_strings)
-                            # hash each string with md5 for faster comparison
-                            hash_object = hashlib.md5(six_strings.encode())
-                            # add each hash to one big list with all hashes of all existing documents
-                            hash_new.append(hash_object.hexdigest())
-
+            # generate hashes and string list from text
+            [hash_new, string_new] = generate_hashes(pdf_text, tuple_length, hash_new, string_new)
 
             # find all hashes that exists in both old pdfs and the new document
             hash_matches = set(hash_existing).intersection(hash_new)
@@ -149,7 +124,6 @@ for root, subdir, filename in os.walk(test_dir):
                 existing_hash_line_prelim.append(hash_existing.index(match))
             # sort hashes in ascending order
             existing_hash_line_prelim = np.sort(existing_hash_line_prelim)
-
             # delete following seven numbers if string is already a seven word match
             existing_hash_line = []
             for n in existing_hash_line_prelim:
@@ -172,7 +146,7 @@ for root, subdir, filename in os.walk(test_dir):
                 # write title of file in first line
                 f.write("Tested File: %s\n" % os.path.join(root, one_file))
                 f.write("  tuple length: %s  -" % tuple_length)
-                f.write("  min copies  : %s\n" % min_copies)
+                f.write("  min hits  : %s\n" % min_copies)
                 f.write("  reference documents scanned: %s" % ref_doc_count)
                 f.write(" in %.2f seconds" % import_time)
                 f.write(" (%.0f docs/sec)" % (ref_doc_count/import_time))
