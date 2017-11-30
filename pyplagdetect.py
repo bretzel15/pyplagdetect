@@ -70,19 +70,18 @@ def find_matches(hash_existing, hash_new, tuple_length):
     existing_hash_line_prelim = []
     # collect all line numbers of hashes in both old and new pdfs
     for match in hash_matches:
-    existing_hash_line_prelim.append(hash_existing.index(match))
+        existing_hash_line_prelim.append(hash_existing.index(match))
     # sort hashes in ascending order
     existing_hash_line_prelim = np.sort(existing_hash_line_prelim)
     # delete following seven numbers if string is already a seven word match
     existing_hash_line = []
     for n in existing_hash_line_prelim:
-    # print(string_existing[n])
-    if n % (tuple_length + 1) == 0:
-        existing_hash_line.append(n)
-    elif (n - (n % (tuple_length + 1))) in existing_hash_line_prelim:
-        continue
-    else:
-        existing_hash_line.append(n)
+        if n % (tuple_length + 1) == 0:
+            existing_hash_line.append(n)
+        elif (n - (n % (tuple_length + 1))) in existing_hash_line_prelim:
+            continue
+        else:
+            existing_hash_line.append(n)
     # sort hashes in ascending order
     existing_hash_line = np.sort(existing_hash_line)
     return existing_hash_line
